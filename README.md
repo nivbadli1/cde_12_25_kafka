@@ -1,77 +1,79 @@
 # Apache Kafka — Data Engineering Course
 
-קורס Data Engineering | נושא: Apache Kafka
-
-תיקייה זו מכילה חומרי לימוד, תרגילים ופתרונות לנושא Kafka.
+This repository contains course materials, exercises, and solutions for the Apache Kafka module.
 
 ---
 
-## 📁 מבנה התיקיות
+## Folder Structure
 
 ### `01_kafka_basics/`
-**דוגמאות בסיס — Producer & Consumer**
+**Core Producer & Consumer Examples**
 
-היחידה הראשונה מציגה את ה-API הבסיסי של `kafka-python`:
-- **`kafka_producer.ipynb`** — שני producers: Basic producer + File-monitoring producer (קריאה מקובץ log חי ושידורו ל-Kafka)
-- **`kafka_consumer.ipynb`** — שני consumers: Basic consumer + File-to-file consumer (pipeline מלא Kafka → sink file)
+Introduces the basic `kafka-python` API:
+- **`kafka_producer.ipynb`** — Two producer examples:
+  - Basic producer: send hardcoded messages to a topic
+  - File-monitoring producer: tail a live log file and stream its lines to Kafka
+- **`kafka_consumer.ipynb`** — Two consumer examples:
+  - Basic consumer: read messages and print metadata (offset, timestamp, value)
+  - File-to-file consumer: full pipeline — Kafka topic → local sink file
 
 ---
 
 ### `02_fraud_detection/`
-**תרגיל Intermediate — Real-Time Fraud Detection Pipeline**
+**Intermediate Exercise — Real-Time Fraud Detection Pipeline**
 
-בניית pipeline לזיהוי הונאה בזמן אמת עבור מערכת בנקאית.
+Build a real-time fraud detection pipeline for a banking system.
 
 ```
-[Producer] → [Kafka: transactions] → [Consumer] → [Kafka: alerts]
-                                                 → [Kafka: account-stats]
-                                                 → alerts.log
+[Producer] --> [Kafka: transactions] --> [Consumer] --> [Kafka: alerts]
+                                                    --> [Kafka: account-stats]
+                                                    --> alerts.log
 ```
 
-- **`exercise.md`** — הוראות התרגיל המלאות (100 נקודות)
-- **`solution_producer.ipynb`** — מייצר transactions אקראיות עם enrichment מלא
-- **`solution_consumer.ipynb`** — normalization, risk classification, velocity detection, multi-topic output
+- **`exercise.md`** — Full exercise instructions (100 points)
+- **`solution_producer.ipynb`** — Generates random enriched transactions
+- **`solution_consumer.ipynb`** — Normalizes currency, classifies risk, detects velocity fraud, writes to multiple outputs
 
-**נושאים מרכזיים:**
+**Key topics:**
 - Currency normalization (ILS / USD / EUR)
 - Risk classification (LOW / MEDIUM / HIGH / CRITICAL)
-- Account masking
-- Velocity fraud detection עם `collections.deque`
-- כתיבה ל-2 טופיקים ו-log file במקביל
+- Account ID masking
+- Velocity fraud detection using `collections.deque`
+- Writing to 2 output topics and a log file simultaneously
 
 ---
 
 ### `03_multi_api_pipeline/`
-**תרגיל Beginner-Intermediate — Multi-Topic Pipeline with Live APIs**
+**Beginner-Intermediate Exercise — Multi-Topic Pipeline with Live APIs**
 
-חיבור של 2 APIs חינמיים ל-Kafka — ללא צורך ב-API key.
+Connect two free public APIs to Kafka — no API key required for either.
 
 ```
-[Open-Meteo API]  →  weather_producer  →  [Kafka: weather]  →  weather_consumer
-[CoinGecko API]   →  crypto_producer   →  [Kafka: crypto]   →  crypto_consumer
+[Open-Meteo API] --> weather_producer --> [Kafka: weather] --> weather_consumer
+[CoinGecko API]  --> crypto_producer  --> [Kafka: crypto]  --> crypto_consumer
 ```
 
-- **`exercise.md`** — הוראות התרגיל (4 חלקים)
-- **`api_solution_producer.ipynb`** — 2 producers: מזג אוויר (כל 30 שניות) + קריפטו (כל 60 שניות)
-- **`api_solution_consumer.ipynb`** — 2 consumers: weather formatter + crypto price-change alerts
+- **`exercise.md`** — Exercise instructions (4 parts)
+- **`api_solution_producer.ipynb`** — Two producers: weather (every 30s) + crypto prices (every 60s)
+- **`api_solution_consumer.ipynb`** — Two consumers: weather formatter + crypto price-change alert system
 
-**נושאים מרכזיים:**
-- עבודה עם REST APIs בתוך producer
-- Message keying לשמירת סדר per-city / per-coin
-- Price change tracking עם `prev_prices` dict
-- Alert threshold detection (≥2%)
+**Key topics:**
+- Calling REST APIs from inside a producer loop
+- Message keying for per-city / per-coin ordering
+- Price change tracking with a `prev_prices` dict
+- Alert threshold detection (>= 2% change)
 
 ---
 
-## 🚀 סדר הרצה
+## Run Order
 
-| שלב | מה | טרמינל |
+| Step | Action | Terminal |
 |---|---|---|
-| 1 | הרצת Kafka broker | — |
-| 2 | הרצת consumer/s | Terminal 1 |
-| 3 | הרצת producer/s | Terminal 2 |
+| 1 | Start Kafka broker | — |
+| 2 | Run consumer(s) | Terminal 1 |
+| 3 | Run producer(s) | Terminal 2 |
 
-## 🛠 התקנת Dependencies
+## Dependencies
 
 ```bash
 pip install kafka-python requests
