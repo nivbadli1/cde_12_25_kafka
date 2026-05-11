@@ -66,14 +66,6 @@ Key topics:
 
 ---
 
-## Run Order
-
-| Step | Action | Terminal |
-|---|---|---|
-| 1 | Start Kafka broker | — |
-| 2 | Run consumer(s) | Terminal 1 |
-| 3 | Run producer(s) | Terminal 2 |
-
 ## Dependencies
 
 ```bash
