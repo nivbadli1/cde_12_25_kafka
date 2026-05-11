@@ -1,4 +1,4 @@
-# Apache Kafka — Data Engineering Course
+# Apache Kafka — Cloud&Big Data Engineering Course
 
 This repository contains course materials, exercises, and solutions for the Apache Kafka module.
 
