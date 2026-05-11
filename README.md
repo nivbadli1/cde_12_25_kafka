@@ -31,7 +31,7 @@ Build a real-time fraud detection pipeline for a banking system.
                                                     --> alerts.log
 ```
 
-- exercise.md — Full exercise instructions
+- exercise.md
 - solution_producer.ipynb — Generates random enriched transactions
 - solution_consumer.ipynb — Normalizes currency, classifies risk, detects velocity fraud, writes to multiple outputs
 
@@ -54,7 +54,7 @@ Connect two free public APIs to Kafka — no API key required for either.
 [CoinGecko API]  --> crypto_producer  --> [Kafka: crypto]  --> crypto_consumer
 ```
 
-- exercise.md — Full exercise instructions
+- exercise.md
 - api_solution_producer.ipynb — Two producers: weather (every 30s) + crypto prices (every 60s)
 - api_solution_consumer.ipynb — Two consumers: weather formatter + crypto price-change alert system
 

@@ -273,20 +273,3 @@ If the same account appears **4 or more times** in the window, print a velocity 
 | Most frequent type | `max(type_counter, key=type_counter.get)` |
 | Flush the alert file | Don't forget — data loss is silent without it |
 | `None` in JSON | `json.dumps` converts Python `None` to JSON `null` automatically |
-
----
-
-## Evaluation Criteria
-
-| # | Criteria | Points |
-|---|---|---|
-| 1 | Producer sends valid JSON with all fields, key as bytes | 10 |
-| 2 | Currency normalization correct for all 3 currencies | 10 |
-| 3 | Risk classification works for all 4 levels | 10 |
-| 4 | `alerts` topic receives only HIGH+CRITICAL, masked account, risk as key | 15 |
-| 5 | `account-stats` topic receives a valid JSON snapshot every 10 messages | 15 |
-| 6 | Account masking applied in file and `alerts` topic (not in console) | 10 |
-| 7 | `alerts.log` written correctly with flush | 10 |
-| 8 | Velocity detection uses deque correctly, fires at threshold >= 4 | 15 |
-| 9 | `top_type` per account computed correctly using Counter | 5 |
-| **Total** | | **100** |
