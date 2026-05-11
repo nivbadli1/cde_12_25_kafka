@@ -6,21 +6,22 @@ This repository contains course materials, exercises, and solutions for the Apac
 
 ## Folder Structure
 
-### `01_kafka_basics/`
-**Core Producer & Consumer Examples**
+### 01_kafka_basics
+Core Producer & Consumer Examples
 
-Introduces the basic `kafka-python` API:
-- **`kafka_producer.ipynb`** — Two producer examples:
+Introduces the basic kafka-python API:
+
+- kafka_producer.ipynb — Two producer examples:
   - Basic producer: send hardcoded messages to a topic
   - File-monitoring producer: tail a live log file and stream its lines to Kafka
-- **`kafka_consumer.ipynb`** — Two consumer examples:
+- kafka_consumer.ipynb — Two consumer examples:
   - Basic consumer: read messages and print metadata (offset, timestamp, value)
-  - File-to-file consumer: full pipeline — Kafka topic → local sink file
+  - File-to-file consumer: full pipeline — Kafka topic to local sink file
 
 ---
 
-### `02_fraud_detection/`
-**Intermediate Exercise — Real-Time Fraud Detection Pipeline**
+### 02_fraud_detection
+Intermediate Exercise — Real-Time Fraud Detection Pipeline
 
 Build a real-time fraud detection pipeline for a banking system.
 
@@ -30,21 +31,21 @@ Build a real-time fraud detection pipeline for a banking system.
                                                     --> alerts.log
 ```
 
-- **`exercise.md`** — Full exercise instructions (100 points)
-- **`solution_producer.ipynb`** — Generates random enriched transactions
-- **`solution_consumer.ipynb`** — Normalizes currency, classifies risk, detects velocity fraud, writes to multiple outputs
+- exercise.md — Full exercise instructions
+- solution_producer.ipynb — Generates random enriched transactions
+- solution_consumer.ipynb — Normalizes currency, classifies risk, detects velocity fraud, writes to multiple outputs
 
-**Key topics:**
+Key topics:
 - Currency normalization (ILS / USD / EUR)
 - Risk classification (LOW / MEDIUM / HIGH / CRITICAL)
 - Account ID masking
-- Velocity fraud detection using `collections.deque`
+- Velocity fraud detection using collections.deque
 - Writing to 2 output topics and a log file simultaneously
 
 ---
 
-### `03_multi_api_pipeline/`
-**Beginner-Intermediate Exercise — Multi-Topic Pipeline with Live APIs**
+### 03_multi_api_pipeline
+Beginner-Intermediate Exercise — Multi-Topic Pipeline with Live APIs
 
 Connect two free public APIs to Kafka — no API key required for either.
 
@@ -53,14 +54,14 @@ Connect two free public APIs to Kafka — no API key required for either.
 [CoinGecko API]  --> crypto_producer  --> [Kafka: crypto]  --> crypto_consumer
 ```
 
-- **`exercise.md`** — Exercise instructions (4 parts)
-- **`api_solution_producer.ipynb`** — Two producers: weather (every 30s) + crypto prices (every 60s)
-- **`api_solution_consumer.ipynb`** — Two consumers: weather formatter + crypto price-change alert system
+- exercise.md — Full exercise instructions
+- api_solution_producer.ipynb — Two producers: weather (every 30s) + crypto prices (every 60s)
+- api_solution_consumer.ipynb — Two consumers: weather formatter + crypto price-change alert system
 
-**Key topics:**
+Key topics:
 - Calling REST APIs from inside a producer loop
 - Message keying for per-city / per-coin ordering
-- Price change tracking with a `prev_prices` dict
+- Price change tracking with a prev_prices dict
 - Alert threshold detection (>= 2% change)
 
 ---
