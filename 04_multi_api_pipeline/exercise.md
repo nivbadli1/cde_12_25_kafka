@@ -12,7 +12,7 @@ and streams it through Kafka — no API key required for either one.
 
 ```
 [Open-Meteo API]  →  weather_producer  →  [Kafka: weather]  →  weather_consumer
-[CoinGecko API]   →  crypto_producer   →  [Kafka: crypto]   →  crypto_consumer
+[Vélib API]       →  bikes_producer    →  [Kafka: bikes]    →  bikes_consumer
 ```
 
 ### APIs used
@@ -20,7 +20,7 @@ and streams it through Kafka — no API key required for either one.
 | API | What it provides | Docs |
 |---|---|---|
 | **Open-Meteo** | Real-time weather for any coordinates — completely free, no key | https://open-meteo.com |
-| **CoinGecko** | Live crypto prices — free tier, no key required | https://www.coingecko.com/api |
+| **Vélib (Paris bike-share)** | Live number of bikes and free docks at every station — open data, no key | https://www.velib-metropole.fr/donnees-open-data-gbfs-du-service-velib-metropole |
 
 ---
 
@@ -82,48 +82,69 @@ WEATHER_CODES = {
 
 ---
 
-## Part 2 — Crypto Producer → `crypto` topic
+## Part 2 — Bike-Share Producer → `bikes` topic
+
+### The business story
+
+A bike-share company has hundreds of stations. When a station runs out of bikes, customers can't rent;
+when it is full, customers can't return. An operations team moves bikes between stations with trucks,
+so they need a **live stream of station status**. You will build that stream.
 
 ### What to fetch
 
-Call the CoinGecko API once per cycle to get prices for 3 coins.
+Two endpoints (no key needed):
 
-```python
-COINS = ["bitcoin", "ethereum", "solana"]
+```
+# 1) Station information — names and capacity. Fetch ONCE, before the loop.
+GET https://velib-metropole-opendata.smovengo.cloud/opendata/Velib_Metropole/station_information.json
+
+# 2) Station status — live bikes / free docks. Fetch on EVERY cycle.
+GET https://velib-metropole-opendata.smovengo.cloud/opendata/Velib_Metropole/station_status.json
 ```
 
-API endpoint (no key needed):
-```
-GET https://api.coingecko.com/api/v3/simple/price
-    ?ids=bitcoin,ethereum,solana
-    &vs_currencies=usd
-```
+Both responses have the same shape — a list under `data.stations`:
 
-The response looks like:
 ```json
-{
-    "bitcoin":  {"usd": 67450.12},
-    "ethereum": {"usd": 3521.88},
-    "solana":   {"usd": 158.34}
-}
+// station_information.json
+{"data": {"stations": [
+    {"station_id": 213688169, "name": "Benjamin Godard - Victor Hugo", "capacity": 35, ...},
+    ...
+]}}
+
+// station_status.json
+{"data": {"stations": [
+    {"station_id": 213688169, "num_bikes_available": 4, "num_docks_available": 31, ...},
+    ...
+]}}
 ```
+
+### Steps
+
+1. Before the loop: fetch station information and build a lookup dict for the **first 5 stations**:
+   ```python
+   info = requests.get(INFO_URL, timeout=10).json()["data"]["stations"][:5]
+   stations = {s["station_id"]: {"name": s["name"], "capacity": s["capacity"]} for s in info}
+   ```
+2. In the loop: fetch station status, and for every station whose `station_id` is in `stations`,
+   send one message.
 
 ### Message format to send
 
-Send **one message per coin**:
-
 ```python
 {
-    "coin":      "bitcoin",
-    "price_usd": 67450.12,
-    "timestamp": "2024-01-15 10:32:11"
+    "station_id":      213688169,
+    "name":            "Benjamin Godard - Victor Hugo",
+    "capacity":        35,
+    "bikes_available": 4,
+    "docks_available": 31,
+    "timestamp":       "2024-01-15 10:32:11"
 }
 ```
 
 ### Requirements
 
-- Use `coin` name as the message **key** (as bytes)
-- After sending all 3 coins, **sleep 60 seconds**, then repeat
+- Use `station_id` as the message **key** (convert to string, then to bytes: `str(station_id).encode('utf-8')`)
+- After sending all 5 stations, **sleep 60 seconds**, then repeat
 - Use `acks=1` and `retries=3`
 - Call `flush()` after each send
 
@@ -147,45 +168,45 @@ Read from the `weather` topic and print one formatted line per message:
 
 ---
 
-## Part 4 — Crypto Consumer
+## Part 4 — Bikes Consumer
 
-Read from the `crypto` topic, print prices, and detect significant price changes.
-
-### Keep track of the last seen price
-
-For each coin, store the **previous price** in a dict. Compare the new price to the previous one and calculate the percentage change:
-
-```python
-change_pct = ((new_price - prev_price) / prev_price) * 100
-```
+Read from the `bikes` topic, print the station status, and alert the operations team.
 
 ### Output format
 
 ```
-📈 bitcoin    | $   67,450.12 | change: +3.21%
-📉 ethereum   | $    3,521.88 | change: -1.45%
-📈 solana     | $      158.34 | change: +0.82%
+🚲 Benjamin Godard - Victor Hugo  |  4/35 bikes ( 11%) | change: -2
+🚲 Cassini - Denfert-Rochereau    | 18/25 bikes ( 72%) | change: +1
 ```
 
-Use `📈` when the change is positive and `📉` when negative.
+- `fill %` = `bikes_available / capacity * 100`
+- `change` = bikes now minus bikes in the **previous message for the same station**
 
-### Price alert
+### Keep track of the last seen value
 
-If `abs(change_pct) >= 2.0` — print a price alert:
+Store the previous `bikes_available` per station in a dict, exactly like a running state:
 
+```python
+prev_bikes = {}          # { station_id: bikes_available }
+change = bikes - prev_bikes[station_id]
 ```
-⚠️  PRICE ALERT: bitcoin moved +3.21% since last message!
-```
+
+On the **first message** for a station there is no previous value — print `change: new` instead.
+
+### Operations alerts
+
+| Condition | Print |
+|---|---|
+| `bikes_available <= 2` | `⚠️  LOW BIKES: <name> has only <n> bikes — send a truck with bikes!` |
+| `docks_available <= 2` | `⚠️  STATION FULL: <name> has only <n> free docks — take bikes away!` |
 
 ### Requirements
 
-- `group_id = 'crypto-monitor'`
-- Initialize `prev_prices = {}` before the loop
-- After printing, update `prev_prices[coin] = new_price`
-- Skip the change calculation on the **first message** for each coin
-  (when `coin` is not yet in `prev_prices`)
+- `group_id = 'bikes-monitor'`
+- Initialize `prev_bikes = {}` before the loop
+- Update `prev_bikes[station_id] = bikes` **after** printing
 
-> 💡 Hint: Use `if coin not in prev_prices` to detect the first message for each coin.
+> 💡 Hint: Use `if station_id not in prev_bikes` to detect the first message for each station.
 
 ---
 
@@ -195,7 +216,7 @@ If `abs(change_pct) >= 2.0` — print a price alert:
 |---|---|
 | Key must be bytes | `city_name.encode('utf-8')` |
 | Deserialize on consumer | `json.loads(message.value.decode('utf-8'))` |
-| First message has no prev price | `if coin not in prev_prices: prev_prices[coin] = price; continue` |
+| First message has no previous value | `if station_id not in prev_bikes:` → print `change: new` |
 | `requests` not installed | `pip install requests kafka-python` |
 | API returns unexpected format | Always `print(response.status_code)` before `.json()` to debug |
 
@@ -207,9 +228,9 @@ If `abs(change_pct) >= 2.0` — print a price alert:
 |---|---|---|
 | 1 | Start Kafka broker | — |
 | 2 | Run `weather_consumer` | Terminal 1 |
-| 3 | Run `crypto_consumer` | Terminal 2 |
+| 3 | Run `bikes_consumer` | Terminal 2 |
 | 4 | Run `weather_producer` | Terminal 3 |
-| 5 | Run `crypto_producer` | Terminal 4 |
+| 5 | Run `bikes_producer` | Terminal 4 |
 
 ---
 

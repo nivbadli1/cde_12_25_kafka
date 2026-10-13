@@ -78,7 +78,8 @@ EXCHANGE_RATES = {
 Create a generator function `transaction_generator()` that yields random transactions infinitely.
 
 ```python
-ACCOUNTS          = ['ACC_1', 'ACC_2', 'ACC_3', 'ACC_4', 'ACC_5']
+ACCOUNTS           = ['ACC_1', 'ACC_2', ..., 'ACC_10']   # 10 accounts
+SUSPICIOUS_ACCOUNT = 'ACC_7'
 CITIES            = ['Tel Aviv', 'Jerusalem', 'Haifa', 'Beer Sheva', 'Eilat']
 CURRENCIES        = ['ILS', 'USD', 'EUR']
 TRANSACTION_TYPES = ['TRANSFER', 'WITHDRAWAL', 'PURCHASE', 'DEPOSIT']
@@ -86,7 +87,11 @@ MERCHANTS         = ['Amazon', 'Zara', 'Apple', 'IKEA', 'Spotify', 'Netflix']
 ```
 
 Rules:
-- `amount` — random float between **10 and 8000**, rounded to 2 decimal places
+- `account_id` — **20%** of the time use `SUSPICIOUS_ACCOUNT`, otherwise a random account from `ACCOUNTS`
+  (this simulates a fraudster who makes many transactions in a short time)
+- `amount` — rounded to 2 decimal places:
+  - **80%** of the time: random float between **10 and 500** (everyday purchases)
+  - **20%** of the time: random float between **500 and 2500** (large transactions)
 - `merchant` — only set if `transaction_type == 'PURCHASE'`, otherwise `None`
 - `timestamp` — current datetime as a formatted string
 
@@ -143,6 +148,8 @@ Write a function `mask_account(account_id)` that masks the numeric part:
 "ACC_3"  →  "ACC_***"
 "ACC_12" →  "ACC_***"
 ```
+
+> 💡 Hint: use `random() < 0.2` (from the `random` module) for "20% of the time"
 
 > 💡 Hint: use `.split('_')` to isolate the prefix, then concatenate `'_***'`
 
@@ -224,7 +231,7 @@ Call `f.flush()` after every write.
 ### 2.8 — Velocity Fraud Detection
 
 Track the `account_id` of the **last 20 messages** using a `collections.deque`.
-If the same account appears **4 or more times** in the window, print a velocity alert:
+If the same account appears **5 or more times** in the window, print a velocity alert:
 
 ```
 ⚠️  VELOCITY ALERT | ACC_3 appeared 5 times in the last 20 transactions
@@ -253,7 +260,7 @@ If the same account appears **4 or more times** in the window, print a velocity 
 >
 > **Step 4 — Fire the alert:**
 > ```python
-> if count_in_window >= 4:
+> if count_in_window >= 5:
 >     print(f"⚠️  VELOCITY ALERT | {acc} appeared {count_in_window} times in the last 20 transactions")
 > ```
 >
