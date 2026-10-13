@@ -1,0 +1,53 @@
+# Kafka environment for this module.
+#
+# Start:   docker compose up -d
+# Check:   docker ps              (4 containers should be "Up")
+# Stop:    docker compose down
+#
+# Services:
+#   zookeeper     - coordinates the Kafka broker (required by this Kafka version)
+#   course-kafka  - the Kafka broker; code connects to course-kafka:9092
+#   kafdrop       - web UI to browse topics and messages: http://localhost:9003
+#   dev_env       - where you run the Python code (Jupyter: http://localhost:8888)
+#
+# Why run the code inside dev_env?
+#   The broker advertises itself as "course-kafka", a name that only resolves inside the
+#   Docker network, and the exercises use paths under /home/developer/... that exist in dev_env.
+
+services:
+
+    zookeeper:
+        container_name: zookeeper
+        image: wurstmeister/zookeeper:latest
+        ports:
+            - "2181:2181"
+
+    course-kafka:
+        container_name: course-kafka
+        image: wurstmeister/kafka:2.13-2.8.1
+        environment:
+            KAFKA_ADVERTISED_HOST_NAME: course-kafka      # the address clients use to reach the broker
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+        ports:
+            - "9092:9092"
+        depends_on:
+            - zookeeper
+
+    kafdrop:
+        container_name: kafdrop
+        image: obsidiandynamics/kafdrop:3.30.0
+        ports:
+            - "9003:9000"                                 # open http://localhost:9003
+        environment:
+            - KAFKA_BROKERCONNECT=course-kafka:9092
+        depends_on:
+            - course-kafka
+
+    dev_env:
+        container_name: dev_env
+        image: ofrir119/developer_env:spark340_ssh
+        ports:
+            - "22022:22"                                  # SSH (e.g. VS Code Remote-SSH)
+            - "8888:8888"                                 # Jupyter
+        depends_on:
+            - course-kafka

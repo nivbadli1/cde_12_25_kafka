@@ -13,13 +13,29 @@ Work through the folders in order — each one builds on the previous.
 Every script and notebook starts with a header that says **what to run before it**.
 Long-running scripts never stop on their own — stop them with `Ctrl+C` (or the notebook ■ button).
 
-## Dependencies
+## Environment Setup
+
+```bash
+docker compose up -d      # starts zookeeper, course-kafka, kafdrop, dev_env
+docker ps                 # all 4 containers should be "Up"
+```
+
+| Service | What it is | Access |
+|---|---|---|
+| `course-kafka` | Kafka broker | `course-kafka:9092` (from inside dev_env) |
+| `kafdrop` | Web UI — browse topics and messages | http://localhost:9003 |
+| `dev_env` | Where you run the Python code | Jupyter http://localhost:8888 / SSH port 22022 |
+
+Run all code **inside `dev_env`**: the broker name `course-kafka` only resolves inside the Docker network,
+and the exercises write files under `/home/developer/...`.
+
+Inside dev_env, install the Python libraries once:
 
 ```bash
 pip install kafka-python requests
 ```
 
-The code connects to the broker at `course-kafka:9092` (the course Docker environment).
+Stop everything with `docker compose down`.
 
 ---
 
